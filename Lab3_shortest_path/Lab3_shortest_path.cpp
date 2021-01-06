@@ -115,7 +115,7 @@ bool print_shortest_path(ALGraph* G, int src, int dest, int curr_dist, bool* vis
     if (!G || !visited)
         return false;
 
-    if (curr_dist < G->vertices[dest].dist)
+    if (curr_dist > G->vertices[dest].dist)
         return false;
 
     if (src == dest && curr_dist == G->vertices[dest].dist) {
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
     printf("input source and destination (i.e 1 2) : ");
     scanf("%d%d", &src, &dest);
     dijkstra(G, src, dest);
-    printf("%d %d\n\n %d\n\n", src, dest, G->vertices[dest].dist);
+    printf("%d %d\n\n%d\n\n", src, dest, G->vertices[dest].dist);
     print_shortest_path(G,src, dest, 0, visited);
     return 0;
 }
