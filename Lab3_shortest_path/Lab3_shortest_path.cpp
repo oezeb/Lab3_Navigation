@@ -112,7 +112,11 @@ int main(int argc, char* argv[]) {
     scanf("%d%d", &src, &dest);
     SetDist(G, src, dest);
     fprintf(f, "%d %d\n\n%d\n\n", src, dest, G->vertices[dest].dist);
-    print_shortest_path(G, src, dest, 0, visited, f);
+    while (dest != src) {
+        fprintf(f, "%d<-", dest);
+        dest = G->vertices[dest].prev;
+    }
+    fprintf(f, "%d", dest);
 
     fclose(f);
     free(visited);

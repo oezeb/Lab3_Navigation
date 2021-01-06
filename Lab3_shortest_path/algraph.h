@@ -20,6 +20,7 @@ typedef struct ArcNode {
 typedef struct VNode {
     int dist;
     ArcNode* firstarc;
+    int prev; //verice before reaching current one(use to draw path)
 }VNode, * AdjList;
 
 typedef struct {
@@ -36,6 +37,7 @@ void initGraph(ALGraph* G, int vexnum) {
     for (int i = 0; i < vexnum; i++) {
         G->vertices[i].dist = INT_MAX; //dist = infinite
         G->vertices[i].firstarc = NULL;
+        G->vertices[i].prev = -1;
     }
 
     G->vexnum = vexnum;
@@ -129,44 +131,14 @@ void SetDist(ALGraph* G, int src, int dest) {
             // u to v, and total weight of path from src to v through u is 
             // smaller than current value of dist[v] 
             if (!sptSet[v] && G->vertices[u].dist != INT_MAX
-                && G->vertices[u].dist + p->weight < G->vertices[v].dist)
+                && G->vertices[u].dist + p->weight < G->vertices[v].dist) {
                 G->vertices[v].dist = G->vertices[u].dist + p->weight;
+                G->vertices[v].prev = u;
+            }
             p = p->nextarc;
         }
     }
     free(sptSet);
-}
-
-bool print_shortest_path(ALGraph* G, int src, int dest, int curr_dist, bool* visited, FILE* outputfile) {
-    //basic condition
-    if (!G || !visited || !outputfile)
-        return false;
-
-    // if current dist already bigger than dest dist of course it's not the right path
-    if (curr_dist > G->vertices[dest].dist)
-        return false;
-
-
-
-    //found the right path
-    if (src == dest && curr_dist == G->vertices[dest].dist) {
-        fprintf(outputfile, "%d", dest);
-        return true;
-    }
-
-    //check the neighborhood
-    visited[src] = true;
-    ArcNode* p = G->vertices[src].firstarc;
-    while (p) {
-        if (!visited[p->adjvex] && print_shortest_path(G, p->adjvex, dest, curr_dist + p->weight, visited, outputfile)) {
-            fprintf(outputfile, "<-%d", src);
-            return true;
-        }
-        p = p->nextarc;
-    }
-
-    visited[src] = false;
-    return false;
 }
 
 #endif // !ALGRAPH
