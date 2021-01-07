@@ -53,23 +53,30 @@ int atoi(char* str, int* pos) {
 }
 
 int main(int argc, char* argv[]) {
-    //open file
-    char filename[SIZE];
+    //get data
+    char inFileName[SIZE];
+    char outFileName[SIZE];
+    int src, dest;
     printf("input file name : ");
-    scanf("%s", &filename);
-    FILE* f = fopen(filename, "r");
-    if (f == NULL)
+    scanf("%s", &inFileName);
+    printf("output file name : ");
+    scanf("%s", &outFileName);
+    printf("input source and destination (i.e 1 2) : ");
+    scanf("%d%d", &src, &dest);
+
+    FILE* in = fopen(inFileName, "r");
+    FILE* out = fopen(outFileName, "w");
+    if (!in || !out)
         return ERROR;
 
     //Create Graph
     ALGraph* G = (ALGraph*)malloc(sizeof(ALGraph));
     if (!G)
         exit(OVERFLOW);
-
-    while (!feof(f)) {
-        char* str = getLine(f);
+    while (!feof(in)) {
+        char* str = getLine(in);
         if (str == NULL)
-            return -1;
+            return ERROR;
         if (str[0] != 'a' && str[0] != 'p')
             continue;
 
@@ -84,42 +91,29 @@ int main(int argc, char* argv[]) {
             //numb2 --> none
             //init graph with numb1 number of vertices
             initGraph(G, numb1);
-            //printf("%c %d %d\n", 'p', numb1, numb2);
         }
         else if (str[0] == 'a') {
             //numb1 --> vertice i
             //numb2 --> vertice j
             //numb2 --> edge weight
             insertArc(G, numb1, numb2, numb3);
-            //printf("%c %d %d %d\n", 'a', numb1, numb2,numb3);
         }
         free(str);
     }
-    fclose(f);
-    printf("output file name : ");
-    scanf("%s", &filename);
-    f = fopen(filename, "w");
-    
-    //find Graph shortest path
-    int src, dest;
-    bool* visited = (bool*)malloc(G->vexnum * sizeof(bool)); 
-    if (visited == NULL)
-        exit(OVERFLOW);
-    for (int i = 0; i < G->vexnum; i++)
-        visited[i] = false;
 
-    printf("input source and destination (i.e 1 2) : ");
-    scanf("%d%d", &src, &dest);
-    SetDist(G, src, dest);
-    fprintf(f, "%d %d\n\n%d\n\n", src, dest, G->vertices[dest].dist);
+    //find shortest path from src to all others vertices
+    shortestPath(G, src);
+
+    //output result
+    fprintf(out, "from %d to %d\n\ndistance %d\n\npath\n", src, dest, G->vertices[dest].dist);
     while (dest != src) {
-        fprintf(f, "%d<-", dest);
+        fprintf(out, "%d<-", dest);
         dest = G->vertices[dest].prev;
     }
-    fprintf(f, "%d", dest);
+    fprintf(out, "%d", dest);
 
-    fclose(f);
-    free(visited);
+    fclose(in);
+    fclose(out);
     delGraph(G);
     free(G);
 

@@ -1,10 +1,8 @@
 #ifndef ALGRAPH
 #define ALGRAPH
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+#include "priority_queue.h"
 
 
 #define OK          1
@@ -18,15 +16,20 @@ typedef struct ArcNode {
 }ArcNode;
 
 typedef struct VNode {
+    int index;
+    int prev; //verice before reaching current one(use to draw path)
     int dist;
     ArcNode* firstarc;
-    int prev; //verice before reaching current one(use to draw path)
 }VNode, * AdjList;
 
 typedef struct {
     AdjList vertices;
     int vexnum, arcnum;
 }ALGraph;
+
+int comp(VNode* const& v1, VNode* const& v2) {
+    return v1->dist - v2->dist;
+}
 
 void initGraph(ALGraph* G, int vexnum) {
 
@@ -38,6 +41,7 @@ void initGraph(ALGraph* G, int vexnum) {
         G->vertices[i].dist = INT_MAX; //dist = infinite
         G->vertices[i].firstarc = NULL;
         G->vertices[i].prev = -1;
+        G->vertices[i].index = i;
     }
 
     G->vexnum = vexnum;
@@ -81,64 +85,33 @@ void insertArc(ALGraph* G, int i, int j, int weight) {
     G->arcnum++;
 }//Insert_Arc
 
+// using  dijkstra algorithm and priority queue
+void shortestPath(ALGraph *G,int src) {
+    // Create a priority queue to store vertices
+    Priority_Queue<VNode*> p_queue;
+    Priority_Queue<VNode*>::init(p_queue, G->vexnum, comp);
 
-//find the vertex with minimum distance value, from 
-// the set of vertices not yet included in shortest path tree 
-int minDistance(ALGraph* G, bool* sptSet) {
-    // Initialize min value 
-    int min = INT_MAX, min_index = -1;
-
-    for (int i = 0; i < G->vexnum; i++)
-        if (sptSet[i] == false && G->vertices[i].dist <= min)
-            min = G->vertices[i].dist, min_index = i;
-
-    return min_index;
-}
-
-//using dijkstra algorithm
-void SetDist(ALGraph* G, int src, int dest) {
-
-    // sptSet[i] will be true if vertex i is included in shortest 
-    // path tree or shortest distance from src to i is finalized 
-    bool* sptSet = (bool*)malloc(G->vexnum * sizeof(bool));
-    if (sptSet == NULL)
-        exit(OVERFLOW);
-
-    // Initialize all stpSet[] as false
-    for (int i = 0; i < G->vexnum; i++)
-        sptSet[i] = false;
-
-    // Distance of source vertex from itself is always 0 
+    // Insert source into priority queue and initialize 
+    // its distance as 0. 
     G->vertices[src].dist = 0;
+    Priority_Queue<VNode*>::enqueue(p_queue, &G->vertices[src]);
 
-    // Find shortest path for all vertices 
-    for (int count = 0; count < G->vexnum - 1; count++) {
-        // Pick the minimum distance vertex from the set of vertices not 
-        // yet processed. u is always equal to src in the first iteration. 
-        int u = minDistance(G, sptSet);
+    while (!Priority_Queue<VNode*>::empty(p_queue)) {
+        VNode* u = NULL;
+        Priority_Queue<VNode*>::dequeue(p_queue, u);
 
-        if (u == dest) // stop when destination distance is set
-            break;
-
-        // Mark the picked vertex as processed 
-        sptSet[u] = true;
-
-        // Update dist value of the adjacent vertices of the picked vertex. 
-        ArcNode* p = G->vertices[u].firstarc;
-        while (p != NULL) {
-            int v = p->adjvex;
-            // Update dist[v] only if is not in sptSet, there is an edge from 
-            // u to v, and total weight of path from src to v through u is 
-            // smaller than current value of dist[v] 
-            if (!sptSet[v] && G->vertices[u].dist != INT_MAX
-                && G->vertices[u].dist + p->weight < G->vertices[v].dist) {
-                G->vertices[v].dist = G->vertices[u].dist + p->weight;
-                G->vertices[v].prev = u;
+        for (ArcNode* e = u->firstarc; e; e = e->nextarc) {
+            VNode* v = &G->vertices[e->adjvex];
+            //  If there is shorted path to v through u. 
+            if (v->dist > u->dist + e->weight) {
+                // Updating distance of v 
+                v->dist = u->dist + e->weight;
+                v->prev = u->index;
+                Priority_Queue<VNode*>::enqueue(p_queue, v);
             }
-            p = p->nextarc;
         }
     }
-    free(sptSet);
+    Priority_Queue<VNode*>::destroy(p_queue);
 }
 
 #endif // !ALGRAPH
